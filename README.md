@@ -1,4 +1,4 @@
-# locusmatch web
+# locusmatch web <img src="assets/logo.svg" align="right" width="80" alt="locusmatch logo">
 
 The browser version of **locusmatch**: compare the fine-mapped signals of a GWAS with every
 earlier study of the trait and see which are novel loci, new signals in known loci or known
@@ -12,8 +12,9 @@ The app is the locusmatch Shiny application compiled with
 [Shinylive](https://posit-dev.github.io/r-shinylive/): R runs inside your browser through
 WebAssembly ([webR](https://docs.r-wasm.org/webr/)). There is no server.
 
-* The first visit downloads the R runtime and packages (about 100 MB, then cached by the
-  browser); the app is ready after roughly 15–30 seconds.
+* The landing page opens immediately and starts loading the app in the background, showing its
+  progress; the first visit downloads the R runtime and packages (about 70 MB, then cached by
+  the browser) and the app is ready after roughly 20–30 seconds.
 * Files you upload are read by R in your own browser and are not sent anywhere.
 * Earlier studies are fetched directly from the
   [Open Targets Platform](https://platform.opentargets.org) API; those requests contain only
@@ -30,7 +31,9 @@ WebAssembly ([webR](https://docs.r-wasm.org/webr/)). There is no server.
 3. **Signal map**: explore the interactive figure and download it (PNG, PDF) together with
    the classification tables (TSV).
 
-The app opens with simulated data, so the signal map tab works immediately.
+The app opens with simulated data, so the signal map tab works immediately, and
+**Schizophrenia example, one click** (on the landing page or in step 1) opens the analysis of
+36 primary schizophrenia GWAS from Open Targets.
 
 File formats: a table of credible sets with columns `cs_id`, `study_id`, `chrom`, `pos`
 (GRCh38), `variant_id` (`chrom:pos:allele1:allele2`) and `pip`, optionally `lbf`
@@ -39,8 +42,15 @@ File formats: a table of credible sets with columns `cs_id`, `study_id`, `chrom`
 
 ## Contents of this repository
 
-This repository only holds the built site; it is generated from the locusmatch R package
-with
+This repository only holds the built site:
+
+| path | content |
+|---|---|
+| `index.html` | landing page |
+| `assets/` | logo, favicons, example figure |
+| `app/` | the app, compiled with Shinylive |
+
+It is generated from the locusmatch R package with
 
 ```sh
 Rscript web/build.R <path-to-this-repository>

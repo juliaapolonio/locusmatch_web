@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="locusmatch">
+  <rect width="64" height="64" rx="14" fill="#17324d"/>
+  <circle cx="32" cy="20" r="10" fill="#eb6834"/>
+  <circle cx="19" cy="44" r="8.5" fill="#c9d3dd"/>
+  <rect x="36.5" y="35.5" width="17" height="17" rx="2.4" fill="#5aa2f2" transform="rotate(45 45 44)"/>
+</svg>

@@ -1,28 +1,341 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>locusmatch</title>
-    <script
-      src="./shinylive/load-shinylive-sw.js"
-      type="module"
-    ></script>
-    <script type="module">
-      import { runExportedApp } from "./shinylive/shinylive.js";
-      runExportedApp({
-        id: "root",
-        appEngine: "r",
-        relPath: "",
-      });
-    </script>
-    <link rel="stylesheet" href="./shinylive/style-resets.css" />
-    <link rel="stylesheet" href="./shinylive/shinylive.css" />
-    
-  </head>
-  <body>
-    
-    <div style="height: 100vh; width: 100vw" id="root"></div>
-    
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>locusmatch</title>
+<meta name="description" content="Compare the fine-mapped signals of a GWAS with every earlier study of the trait: which are novel loci, new signals in known loci, or known signals. Runs in your browser.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<style>
+:root {
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #8a8984; --hair: #e4e3df; --surface: #fcfcfb;
+  --tint: #f4f3f0; --navy: #17324d; --orange: #eb6834; --blue: #2a78d6; --grey: #85837d;
+  --radius: 12px; --max: 1080px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body { margin: 0; background: var(--surface); color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+a { color: var(--blue); }
+.wrap { max-width: var(--max); margin: 0 auto; padding-inline: 24px; }
+
+/* header */
+header.top { position: sticky; top: 0; z-index: 10; background: rgba(252,252,251,.92);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--hair); }
+header.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.wordmark { font-weight: 650; font-size: 1.25rem; letter-spacing: -0.01em; }
+.wordmark span { color: var(--orange); }
+nav.links { display: flex; gap: 20px; margin-left: auto; font-size: .95rem; }
+nav.links a { color: var(--ink-2); text-decoration: none; }
+nav.links a:hover { color: var(--ink); }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; border: 1px solid transparent;
+  padding: 11px 20px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; transition: background .15s, border-color .15s; }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: #0f2438; }
+.btn-ghost { background: transparent; color: var(--navy); border-color: #c8cfd8; }
+.btn-ghost:hover { border-color: var(--navy); }
+.btn-small { padding: 7px 14px; font-size: .9rem; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #f0b429; box-shadow: 0 0 0 3px rgba(240,180,41,.25); }
+.ready .dot { background: #2fb36d; box-shadow: 0 0 0 3px rgba(47,179,109,.25); }
+
+/* hero */
+.hero { padding: 72px 0 56px; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+.hero-logo { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+.hero-logo .wordmark { font-size: 2rem; }
+h1 { font-size: clamp(2rem, 4.2vw, 3.1rem); line-height: 1.12; letter-spacing: -0.025em; margin: 0 0 18px; font-weight: 700; }
+.lead { font-size: 1.15rem; color: var(--ink-2); max-width: 36em; margin: 0 0 28px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* loader card */
+.loader { background: #fff; border: 1px solid var(--hair); border-radius: var(--radius); padding: 22px 22px 18px; }
+.loader h3 { margin: 0 0 4px; font-size: 1rem; }
+.loader .sub { color: var(--muted); font-size: .88rem; margin: 0 0 14px; }
+.bar { height: 6px; background: var(--tint); border-radius: 999px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--navy)); transition: width .5s ease; }
+.steps { list-style: none; padding: 0; margin: 14px 0 0; font-size: .92rem; }
+.steps li { display: flex; align-items: center; gap: 10px; padding: 4px 0; color: var(--muted); }
+.steps li .ic { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--hair); flex: none; display: grid; place-items: center; font-size: 11px; }
+.steps li.active { color: var(--ink); }
+.steps li.active .ic { border-color: var(--blue); border-top-color: transparent; animation: spin .9s linear infinite; }
+.steps li.done { color: var(--ink-2); }
+.steps li.done .ic { border-color: #2fb36d; background: #2fb36d; color: #fff; }
+.steps li.done .ic::after { content: "\2713"; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader .foot { margin-top: 12px; font-size: .82rem; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; }
+.loader.ready h3::after { content: " \2014 ready"; color: #2fb36d; }
+
+/* sections */
+section { padding: 64px 0; }
+section.alt { background: #fff; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+h2 { font-size: 1.75rem; letter-spacing: -0.02em; margin: 0 0 10px; }
+.kicker { text-transform: uppercase; letter-spacing: .08em; font-size: .78rem; font-weight: 650; color: var(--orange); margin: 0 0 8px; }
+.intro { color: var(--ink-2); max-width: 46em; margin: 0 0 32px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); padding: 22px; }
+section.alt .card { background: var(--surface); }
+.card h3 { margin: 10px 0 6px; font-size: 1.05rem; }
+.card p { margin: 0; color: var(--ink-2); font-size: .95rem; }
+.num { width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font-weight: 650; font-size: .9rem; }
+.labels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 24px; }
+.label { display: flex; gap: 10px; align-items: flex-start; font-size: .93rem; color: var(--ink-2); }
+.label b { color: var(--ink); display: block; }
+.mk { flex: none; margin-top: 4px; width: 14px; height: 14px; }
+figure { margin: 0; }
+figure img { width: 100%; height: auto; border: 1px solid var(--hair); border-radius: var(--radius); background: #fff; }
+figcaption { font-size: .9rem; color: var(--ink-2); margin-top: 14px; }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+ul.plain { padding-left: 1.1rem; margin: 0; } ul.plain li { margin: 6px 0; color: var(--ink-2); }
+code { font: .88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--tint); padding: 1px 5px; border-radius: 4px; }
+footer { padding: 32px 0 48px; color: var(--muted); font-size: .88rem; }
+footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+/* app layer */
+#app-layer { position: fixed; inset: 0; z-index: 50; background: var(--surface); visibility: hidden; opacity: 0; pointer-events: none; transition: opacity .2s; }
+#app-layer iframe { width: 100%; height: 100%; border: 0; display: block; }
+body.show-app #app-layer { visibility: visible; opacity: 1; pointer-events: auto; }
+body.show-app { overflow: hidden; }
+#app-wait { position: absolute; inset: 0; display: none; place-items: center; background: var(--surface); padding: 24px; }
+body.show-app.loading #app-wait { display: grid; }
+#app-wait .loader { width: min(460px, 100%); }
+#app-wait .back { margin-top: 14px; text-align: center; }
+
+@media (max-width: 860px) {
+  .hero-grid, .cols2 { grid-template-columns: 1fr; gap: 32px; }
+  .grid3, .labels { grid-template-columns: 1fr 1fr; }
+  nav.links { display: none; }
+}
+@media (max-width: 520px) { .grid3, .labels { grid-template-columns: 1fr; } .hero { padding-top: 40px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="locusmatch home">
+      <img src="assets/logo.svg" width="30" height="30" alt="">
+      <span class="wordmark">locus<span>match</span></span>
+    </a>
+    <nav class="links">
+      <a href="#why">Why</a><a href="#how">How it works</a><a href="#map">The signal map</a><a href="#data">Data &amp; privacy</a>
+    </nav>
+    <button class="btn btn-primary btn-small js-open" type="button"><span class="dot"></span><span class="js-open-label">Open the app</span></button>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="hero-logo">
+          <img src="assets/logo.svg" width="64" height="64" alt="locusmatch logo">
+          <span class="wordmark">locus<span>match</span></span>
+        </div>
+        <h1>Which signals of your GWAS are actually new?</h1>
+        <p class="lead">locusmatch compares the fine-mapped signals of a genome-wide association study with every earlier study of the trait, labels each one, and draws the result as a single genome-wide <em>signal map</em> that can replace the Manhattan plot.</p>
+        <div class="cta">
+          <button class="btn btn-primary js-open" type="button"><span class="dot"></span><span class="js-open-label">Open the app</span></button>
+          <button class="btn btn-ghost js-example" type="button">Schizophrenia example, one click</button>
+        </div>
+      </div>
+      <div class="loader js-loader" aria-live="polite">
+        <h3>Preparing the app in your browser</h3>
+        <p class="sub">locusmatch runs R inside this page, so nothing you upload leaves your computer. Read on while it loads.</p>
+        <div class="bar"><div class="js-bar"></div></div>
+        <ol class="steps">
+          <li data-step="0"><span class="ic"></span>Downloading R (WebAssembly)</li>
+          <li data-step="1"><span class="ic"></span>Installing R packages</li>
+          <li data-step="2"><span class="ic"></span>Starting locusmatch</li>
+        </ol>
+        <div class="foot"><span class="js-elapsed">0 s</span><span>about 30 s on a first visit, faster afterwards</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="why" class="alt">
+    <div class="wrap">
+      <p class="kicker">The problem</p>
+      <h2>"Novel locus" usually means "far from a known hit"</h2>
+      <p class="intro">GWAS papers call a locus new when its lead variant is more than some distance from, or in low linkage disequilibrium with, every hit reported before. That compares single variants and assumes one causal variant per locus. As studies grow, loci with several independent signals become the rule, and the rule breaks in both directions.</p>
+      <div class="grid3">
+        <div class="card"><h3>New signals hidden in known loci</h3><p>A second, independent association next to a known one is called "known", because a reported hit is nearby.</p></div>
+        <div class="card"><h3>One signal, two names</h3><p>The same signal reported through different lead variants in two studies can look like two loci, or two close signals like one.</p></div>
+        <div class="card"><h3>No shared ledger</h3><p>Each paper defines its loci its own way, so tracing when a signal was first found, and by whom, is manual work.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <p class="kicker">How it works</p>
+      <h2>Compare signals, not lead variants</h2>
+      <p class="intro">Fine-mapping turns each association signal into a <em>credible set</em>: the variants that probably contain the causal one, each with a posterior probability. locusmatch compares credible sets across studies.</p>
+      <div class="grid3">
+        <div class="card"><div class="num">1</div><h3>Credible sets</h3><p>From your fine-mapping (SuSiE, or PICS for top hits), and for earlier studies from the Open Targets Platform, which fine-maps the GWAS Catalog, FinnGen and UK Biobank.</p></div>
+        <div class="card"><div class="num">2</div><h3>Colocalisation</h3><p>Two credible sets are the same signal when they colocalise: Bayes-factor coloc when both studies provide Bayes factors, otherwise the PIP-based approximation used by Open Targets.</p></div>
+        <div class="card"><div class="num">3</div><h3>A signal registry</h3><p>Studies are added in publication order to a registry of signals with stable identifiers, so every signal keeps the study and date that first reported it.</p></div>
+      </div>
+      <div class="labels">
+        <div class="label"><svg class="mk" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="#eb6834"/></svg><div><b>Novel locus</b>No earlier signal in the region.</div></div>
+        <div class="label"><svg class="mk" viewBox="0 0 14 14"><rect x="2.4" y="2.4" width="9.2" height="9.2" fill="#2a78d6" transform="rotate(45 7 7)"/></svg><div><b>New signal, known locus</b>Known region, distinct signal.</div></div>
+        <div class="label"><svg class="mk" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="#85837d"/></svg><div><b>Known signal</b>Colocalises with an earlier one.</div></div>
+        <div class="label"><svg class="mk" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.2" fill="#fff" stroke="#52514e" stroke-width="1.6"/></svg><div><b>Ambiguous</b>The evidence does not decide.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="map" class="alt">
+    <div class="wrap">
+      <p class="kicker">The signal map</p>
+      <h2>One figure: what is new, how precise, and how it was found</h2>
+      <p class="intro">The signal map keeps the genomic axis of the Manhattan plot but draws signals instead of variants, so independent signals in one locus, fine-mapping resolution and novelty are visible at a glance, together with the history of discovery of the trait.</p>
+      <figure>
+        <img src="assets/schizophrenia_example.png" width="2125" height="1299" loading="lazy"
+             alt="Signal map of a 2025 schizophrenia GWAS against 35 earlier primary GWAS of the trait">
+        <figcaption><b>Schizophrenia, from the Open Targets Platform.</b> Dang et al. 2025 against the 35 earlier primary GWAS of the trait (2009&ndash;2025). <b>a</b>, every credible set of the study, coloured by novelty, sized by fine-mapping resolution and labelled with locus-to-gene predictions. <b>b</b>, the signals each earlier publication reported; a column of ticks is a signal replicated over time, dark ticks mark its first report. <b>c</b>, signals known after each publication. Open this exact analysis with the <a href="#" class="js-example">schizophrenia example</a>.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="data">
+    <div class="wrap cols2">
+      <div>
+        <p class="kicker">What you need</p>
+        <h2>Your credible sets, or nothing at all</h2>
+        <ul class="plain">
+          <li><b>Earlier studies:</b> search a trait or paste GWAS Catalog, FinnGen or UK Biobank accessions, then filter by year, ancestry, study kind and number of cases. Or upload your own.</li>
+          <li><b>Your GWAS:</b> a table of credible sets with <code>cs_id</code>, <code>chrom</code>, <code>pos</code> (GRCh38), <code>variant_id</code> and <code>pip</code>; optionally log Bayes factors, p-values and gene labels. Or pick a published study.</li>
+          <li><b>Results:</b> the interactive map, a table of your signals with their labels, and the full registry; figures as PNG or PDF, tables as TSV.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kicker">Data &amp; privacy</p>
+        <h2>Runs entirely in your browser</h2>
+        <ul class="plain">
+          <li>The app is R compiled to WebAssembly (<a href="https://docs.r-wasm.org/webr/">webR</a>, <a href="https://posit-dev.github.io/r-shinylive/">Shinylive</a>). There is no server: files you upload are read on your computer and are not sent anywhere.</li>
+          <li>Earlier studies come from the <a href="https://platform.opentargets.org">Open Targets Platform</a> API; those requests contain only trait names, study accessions and credible-set identifiers.</li>
+          <li>Methods: colocalisation (coloc; Giambartolomei et al. 2014, Wallace 2021), fine-mapping (SuSiE; Wang et al. 2020, Zou et al. 2022; PICS; Farh et al. 2015). Credible sets and locus-to-gene predictions from Open Targets, studies from the GWAS Catalog.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><span class="wordmark" style="font-size:1rem">locus<span>match</span></span> &middot; MIT licence</span>
+    <span>Built with R, Shiny and Shinylive</span>
+  </div>
+</footer>
+
+<!-- The app: loaded in the background as soon as this page opens, shown on demand -->
+<div id="app-layer" aria-hidden="true">
+  <iframe id="app-frame" title="locusmatch app" src="app/"></iframe>
+  <div id="app-wait">
+    <div>
+      <div class="loader js-loader">
+        <h3>Almost there</h3>
+        <p class="sub">The app opens as soon as R has finished starting in your browser.</p>
+        <div class="bar"><div class="js-bar"></div></div>
+        <ol class="steps">
+          <li data-step="0"><span class="ic"></span>Downloading R (WebAssembly)</li>
+          <li data-step="1"><span class="ic"></span>Installing R packages</li>
+          <li data-step="2"><span class="ic"></span>Starting locusmatch</li>
+        </ol>
+        <div class="foot"><span class="js-elapsed">0 s</span><span>about 30 s on a first visit</span></div>
+      </div>
+      <div class="back"><button class="btn btn-ghost btn-small" type="button" onclick="locusmatchShowLanding()">Back to the introduction</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const t0 = performance.now();
+  // Measured on a first visit: R runtime ~8 s, packages until ~20 s, app start ~30 s.
+  const STEP_ENDS = [8, 20, 30];
+  let ready = false, pending = null, pushed = false;
+
+  function appWindow() {
+    try {
+      const outer = document.getElementById('app-frame').contentWindow;
+      const inner = outer && outer.document.querySelector('iframe');
+      return inner ? inner.contentWindow : null;
+    } catch (e) { return null; }
+  }
+  function appIsReady(w) {
+    try {
+      // the server has rendered the first output of step 1
+      const el = w && w.document.getElementById('study_status');
+      return !!(w.Shiny && w.Shiny.setInputValue && el && el.textContent.trim().length);
+    } catch (e) { return false; }
+  }
+
+  function render() {
+    const s = (performance.now() - t0) / 1000;
+    let progress, step;
+    if (ready) { progress = 100; step = 3; }
+    else {
+      step = STEP_ENDS.findIndex(e => s < e); if (step < 0) step = 2;
+      progress = Math.min(96, 100 * (1 - Math.exp(-s / 13)));
+    }
+    document.querySelectorAll('.js-bar').forEach(b => b.style.width = progress.toFixed(1) + '%');
+    document.querySelectorAll('.js-elapsed').forEach(e => e.textContent = ready ? 'Ready' : Math.round(s) + ' s');
+    document.querySelectorAll('.steps li').forEach(li => {
+      const i = +li.dataset.step;
+      li.className = i < step ? 'done' : (i === step ? 'active' : '');
+    });
+    document.querySelectorAll('.js-loader').forEach(l => l.classList.toggle('ready', ready));
+    document.querySelectorAll('.js-open').forEach(b => b.classList.toggle('ready', ready));
+    document.querySelectorAll('.js-open-label').forEach(l => l.textContent = ready ? 'Open the app' : 'Open the app (loading)');
+  }
+
+  function poll() {
+    if (!ready && appIsReady(appWindow())) {
+      ready = true;
+      document.body.classList.remove('loading');
+      if (pending === 'example') triggerExample();
+      pending = null;
+    }
+    render();
+    if (!ready) setTimeout(poll, 400);
+  }
+
+  function triggerExample() {
+    const w = appWindow();
+    if (w && w.Shiny) w.Shiny.setInputValue('example_request', Date.now(), {priority: 'event'});
+  }
+
+  function showApp(withExample) {
+    if (withExample) { if (ready) triggerExample(); else pending = 'example'; }
+    document.body.classList.add('show-app');
+    document.body.classList.toggle('loading', !ready);
+    document.getElementById('app-layer').setAttribute('aria-hidden', 'false');
+    if (location.hash !== '#app') { history.pushState({app: true}, '', '#app'); pushed = true; }
+  }
+  function hideApp() {
+    document.body.classList.remove('show-app', 'loading');
+    document.getElementById('app-layer').setAttribute('aria-hidden', 'true');
+  }
+  // Called by the logo in the app's menu bar.
+  window.locusmatchShowLanding = function () {
+    if (location.hash === '#app' && pushed) { pushed = false; history.back(); return; }
+    if (location.hash === '#app') history.replaceState(null, '', location.pathname);
+    hideApp();
+  };
+  window.addEventListener('popstate', () => { if (location.hash === '#app') showApp(false); else hideApp(); });
+
+  document.querySelectorAll('.js-open').forEach(b => b.addEventListener('click', () => showApp(false)));
+  document.querySelectorAll('.js-example').forEach(b => b.addEventListener('click', e => { e.preventDefault(); showApp(true); }));
+  if (location.hash === '#app') showApp(false);
+  poll();
+})();
+</script>
+</body>
 </html>
