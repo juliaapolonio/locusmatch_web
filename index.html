@@ -40,6 +40,11 @@ nav.links a:hover { color: var(--ink); }
 .btn-ghost { background: transparent; color: var(--navy); border-color: #c8cfd8; }
 .btn-ghost:hover { border-color: var(--navy); }
 .btn-small { padding: 7px 14px; font-size: .9rem; }
+/* "Open the app": grey while the app loads, blue once it is ready */
+.btn-primary.js-open { background: #77766f; transition: background .4s; }
+.btn-primary.js-open:hover { background: #64635d; }
+.btn-primary.js-open.ready { background: var(--blue); }
+.btn-primary.js-open.ready:hover { background: #1f63b5; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: #f0b429; box-shadow: 0 0 0 3px rgba(240,180,41,.25); }
 .ready .dot { background: #2fb36d; box-shadow: 0 0 0 3px rgba(47,179,109,.25); }
 
