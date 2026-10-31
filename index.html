@@ -265,7 +265,7 @@ body.show-app.loading #app-wait { display: grid; }
   const t0 = performance.now();
   // Measured on a first visit: R runtime ~8 s, packages until ~20 s, app start ~30 s.
   const STEP_ENDS = [8, 20, 30];
-  let ready = false, pending = null, pushed = false;
+  let ready = false, pending = null, pushed = false, pendingTour = null;
 
   function appWindow() {
     try {
@@ -307,9 +307,19 @@ body.show-app.loading #app-wait { display: grid; }
       document.body.classList.remove('loading');
       if (pending === 'example') triggerExample();
       pending = null;
+      if (pendingTour) { tour(pendingTour); pendingTour = null; }
     }
     render();
     if (!ready) setTimeout(poll, 400);
+  }
+
+  // First visit: the full tour when the app is opened, only an offer when the
+  // visitor went straight to the example (so the tour does not move them away from it).
+  function tour(kind) {
+    const w = appWindow();
+    if (!w || typeof w.locusmatchMaybeTour !== 'function') return;
+    if (kind === 'offer') setTimeout(() => w.locusmatchMaybeTour({offerOnly: true}), 1500);
+    else setTimeout(() => w.locusmatchMaybeTour(), 400);
   }
 
   function triggerExample() {
@@ -319,6 +329,8 @@ body.show-app.loading #app-wait { display: grid; }
 
   function showApp(withExample) {
     if (withExample) { if (ready) triggerExample(); else pending = 'example'; }
+    const kind = withExample ? 'offer' : 'full';
+    if (ready) tour(kind); else pendingTour = kind;
     document.body.classList.add('show-app');
     document.body.classList.toggle('loading', !ready);
     document.getElementById('app-layer').setAttribute('aria-hidden', 'false');
