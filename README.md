@@ -13,8 +13,10 @@ The app is the locusmatch Shiny application compiled with
 WebAssembly ([webR](https://docs.r-wasm.org/webr/)). There is no server.
 
 * The landing page opens immediately and starts loading the app in the background, showing its
-  progress; the first visit downloads the R runtime and packages (about 70 MB, then cached by
-  the browser) and the app is ready after roughly 20–30 seconds.
+  progress; the first visit downloads the R runtime and packages (about 70 MB) and the app is
+  ready after roughly 20–30 seconds. The runtime and packages are then kept in the browser's
+  cache storage (through Shinylive's service worker), so later visits only start R; they are
+  downloaded again only when the runtime or a package changes.
 * Files you upload are read by R in your own browser and are not sent anywhere.
 * Earlier studies are fetched directly from the
   [Open Targets Platform](https://platform.opentargets.org) API; those requests contain only
