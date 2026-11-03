@@ -324,6 +324,7 @@ body.show-app.loading #app-wait { display: grid; }
 
   function triggerExample() {
     const w = appWindow();
+    if (w && w.locusmatchExampleBusy) w.locusmatchExampleBusy();
     if (w && w.Shiny) w.Shiny.setInputValue('example_request', Date.now(), {priority: 'event'});
   }
 
