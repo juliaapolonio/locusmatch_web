@@ -19,7 +19,7 @@ WebAssembly ([webR](https://docs.r-wasm.org/webr/)). There is no server.
 * Earlier studies are fetched directly from the
   [Open Targets Platform](https://platform.opentargets.org) API; those requests contain only
   trait names, study accessions and credible-set identifiers.
-* Analyses run more slowly than in R on your computer: comparing a GWAS with the 35 earlier
+* Analyses run more slowly than in R on your computer: comparing a GWAS with 35 other
   primary GWAS of schizophrenia (about 1,200 credible sets) takes around a minute and a half.
 
 ## Using it
